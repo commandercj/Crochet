@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>R'smile'</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Poppins", sans-serif; }
+    body { background-color: #ffe6f0; color: #333; }
+    header {
+      background-color: #ffb6c1;
+      padding: 20px;
+      display: flex; justify-content: space-between; align-items: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    header h1 { font-size: 24px; color: white; }
+    nav a {
+      margin: 0 10px;
+      text-decoration: none;
+      color: white;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+    nav a:hover { color: #ffe6f0; }
+
+    .section { display: none; padding: 40px; text-align: center; animation: fade 0.5s ease-in; }
+    @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+    .active { display: block; }
+
+    button {
+      background-color: #ff7fa2;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 25px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: 0.3s;
+    }
+    button:hover { background-color: #ff4d79; }
+
+    .shop-items {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .item {
+      background: white;
+      border-radius: 15px;
+      padding: 15px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .item img { width: 100%; border-radius: 10px; }
+    .login-container {
+      background: white; max-width: 400px; margin: 40px auto; padding: 20px;
+      border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    input { width: 90%; padding: 10px; margin: 10px; border-radius: 10px; border: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>R'smile</h1>
+    <nav>
+      <a href="#" onclick="showSection('home')">Home</a>
+      <a href="#" onclick="showSection('shop')">Shop</a>
+      <a href="#" onclick="showSection('contact')">Contact</a>
+      <a href="#" onclick="showSection('login')">Login</a>
+    </nav>
+  </header>
+
+  <div id="home" class="section active">
+    <h2>Welcome to R'smile</h2>
+    <p>Handcrafted crochet creations made with love and care 💕</p>
+    <button onclick="showSection('shop')">Shop Now</button>
+  </div>
+
+  <div id="shop" class="section">
+    <h2>Shop Crochet Items</h2>
+    <div class="shop-items">
+      <div class="item">
+        <img src="https://i.imgur.com/8zT6FJZ.jpg" alt="Crochet Bag">
+        <h3>Crochet Bag</h3>
+        <p>₱250</p>
+        <button>Add to Cart</button>
+      </div>
+      <div class="item">
+        <img src="https://i.imgur.com/nul8W4X.jpg" alt="Crochet Hat">
+        <h3>Crochet Hat</h3>
+        <p>₱180</p>
+        <button>Add to Cart</button>
+      </div>
+      <div class="item">
+        <img src="https://i.imgur.com/w0Fz8Je.jpg" alt="Crochet Flower">
+        <h3>Crochet Flower</h3>
+        <p>₱100</p>
+        <button>Add to Cart</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="contact" class="section">
+    <h2>Contact Us</h2>
+    <p>📧 Email: crochetbliss@gmail.com</p>
+    <p>📱 Facebook: Crochet Bliss</p>
+    <p>📸 Instagram: @crochetbliss.ph</p>
+  </div>
+
+  <div id="login" class="section">
+    <div class="login-container">
+      <h2>Login or Sign Up</h2>
+      <input type="email" id="email" placeholder="Email"><br>
+      <input type="password" id="password" placeholder="Password"><br>
+      <button onclick="login()">Login</button>
+      <button onclick="signup()">Sign Up</button><br><br>
+      <button onclick="googleLogin()">Sign in with Google</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyACbXIwLdzyKQA6C9d49DLEW5TiaGftCdk",
+      authDomain: "rsmile-3dac0.firebaseapp.com",
+      databaseURL: "https://rsmile-3dac0-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "rsmile-3dac0",
+      storageBucket: "rsmile-3dac0.firebasestorage.app",
+      messagingSenderId: "178317672547",
+      appId: "1:178317672547:web:127b755e82724e7c613856",
+      measurementId: "G-832CSP457X"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    window.showSection = function(sectionId) {
+      document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+      document.getElementById(sectionId).classList.add('active');
+    }
+
+    window.signup = function() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      createUserWithEmailAndPassword(auth, email, password)
+        .then(user => alert("Account created successfully!"))
+        .catch(err => alert(err.message));
+    }
+
+    window.login = function() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      signInWithEmailAndPassword(auth, email, password)
+        .then(user => alert("Welcome back!"))
+        .catch(err => alert(err.message));
+    }
+
+    window.googleLogin = function() {
+      signInWithPopup(auth, provider)
+        .then(result => alert(`Welcome ${result.user.displayName}`))
+        .catch(err => alert(err.message));
+    }
+  </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Page title</title>
+</head>
+<body>
+    
+</body>
+</html>
