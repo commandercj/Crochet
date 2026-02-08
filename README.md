@@ -1,177 +1,236 @@
-<!DOCTYPE html>
+      <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>R'smile'</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Poppins", sans-serif; }
-    body { background-color: #ffe6f0; color: #333; }
-    header {
-      background-color: #ffb6c1;
-      padding: 20px;
-      display: flex; justify-content: space-between; align-items: center;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    header h1 { font-size: 24px; color: white; }
-    nav a {
-      margin: 0 10px;
-      text-decoration: none;
-      color: white;
-      font-weight: bold;
-      transition: 0.3s;
-    }
-    nav a:hover { color: #ffe6f0; }
+<meta charset="UTF-8">
+<title>TAMBAYAN PH </title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    .section { display: none; padding: 40px; text-align: center; animation: fade 0.5s ease-in; }
-    @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
-    .active { display: block; }
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
-    button {
-      background-color: #ff7fa2;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 25px;
-      cursor: pointer;
-      font-size: 16px;
-      transition: 0.3s;
-    }
-    button:hover { background-color: #ff4d79; }
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
-    .shop-items {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 20px;
-      margin-top: 20px;
-    }
-    .item {
-      background: white;
-      border-radius: 15px;
-      padding: 15px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    .item img { width: 100%; border-radius: 10px; }
-    .login-container {
-      background: white; max-width: 400px; margin: 40px auto; padding: 20px;
-      border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    input { width: 90%; padding: 10px; margin: 10px; border-radius: 10px; border: 1px solid #ccc; }
-  </style>
+<style>
+body { margin:0; font-family:Arial; background:#020617; }
+h2,p { color:white; text-align:center; }
+button.login-google { display:flex; align-items:center; justify-content:center; gap:8px; padding:8px 10px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; color:black; background:white; margin:10px auto; }
+button.login-google img { width:20px; margin-right:8px; }
+
+#mapScreen { display:none; width:100%; height:100vh; }
+
+.pulse { width:14px; height:14px; border-radius:50%; animation:pulse 1.5s infinite; cursor:pointer; }
+@keyframes pulse {0%{box-shadow:0 0 0 0 rgba(34,197,94,.7);}70%{box-shadow:0 0 0 12px rgba(34,197,94,0);}100%{box-shadow:0 0 0 0 rgba(34,197,94,0);}}
+
+/* Quote + chat bubble */
+.inline-chat {
+  position:absolute; background:rgba(255,255,255,0.15); backdrop-filter:blur(8px);
+  border-radius:12px; padding:10px; min-width:220px; max-width:260px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.3); font-size:14px; display:none;
+  flex-direction:column; z-index:1000; opacity:0; transition:opacity 0.3s ease, transform 0.2s ease;
+}
+.inline-chat.show { display:flex; opacity:1; }
+
+.inline-chat .close-btn {
+  position:absolute; top:6px; right:8px; background:rgba(255,255,255,0.3);
+  border:none; color:white; font-weight:bold; border-radius:50%; width:20px; height:20px;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+}
+.inline-chat .close-btn:hover { background:rgba(255,255,255,0.6); }
+
+.inline-chat .quote-section { margin-bottom:8px; font-style:italic; color:white; max-height:100px; overflow-y:auto; border-bottom:1px solid rgba(255,255,255,0.3); padding-bottom:6px; }
+.inline-chat input.quote-input { width:100%; padding:4px 6px; border-radius:6px; border:none; background: rgba(255,255,255,0.2); color:white; margin-bottom:6px; }
+.inline-chat .messages { max-height:120px; overflow-y:auto; margin-bottom:4px; }
+.inline-chat .messages div { margin:2px 0; padding:4px 6px; border-radius:6px; word-wrap:break-word; font-size:13px; }
+.inline-chat .messages .you { background: rgba(34,197,94,0.7); color:white; align-self:flex-end; }
+.inline-chat .messages .them { background: rgba(255,255,255,0.25); color:white; align-self:flex-start; }
+.inline-chat .input-container { display:flex; gap:4px; }
+.inline-chat input { flex:1; padding:5px 8px; border-radius:6px; border:none; background: rgba(255,255,255,0.2); color:white; }
+.inline-chat button { background:#22c55e; color:white; border:none; border-radius:6px; padding:5px 8px; cursor:pointer; }
+.typing { font-size:12px; font-style:italic; color:#ddd; margin-top:2px; }
+</style>
 </head>
 <body>
-  <header>
-    <h1>R'smile</h1>
-    <nav>
-      <a href="#" onclick="showSection('home')">Home</a>
-      <a href="#" onclick="showSection('shop')">Shop</a>
-      <a href="#" onclick="showSection('contact')">Contact</a>
-      <a href="#" onclick="showSection('login')">Login</a>
-    </nav>
-  </header>
 
-  <div id="home" class="section active">
-    <h2>Welcome to R'smile</h2>
-    <p>Handcrafted crochet creations made with love and care 💕</p>
-    <button onclick="showSection('shop')">Shop Now</button>
-  </div>
+<!-- Login Screen -->
+<div id="loginScreen" style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100vh; background:#020617;">
+  <h2>TAMBAYAN </h2>
+  <p>Log in first to see the map</p>
+  <button class="login-google" onclick="loginGoogle()">
+    <img src="https://commons.wikimedia.org/wiki/File:Google_%22G%22_logo.svg">
+    Sign in with Google
+  </button>
+</div>
 
-  <div id="shop" class="section">
-    <h2>Shop Crochet Items</h2>
-    <div class="shop-items">
-      <div class="item">
-        <img src="https://i.imgur.com/8zT6FJZ.jpg" alt="Crochet Bag">
-        <h3>Crochet Bag</h3>
-        <p>₱250</p>
-        <button>Add to Cart</button>
-      </div>
-      <div class="item">
-        <img src="https://i.imgur.com/nul8W4X.jpg" alt="Crochet Hat">
-        <h3>Crochet Hat</h3>
-        <p>₱180</p>
-        <button>Add to Cart</button>
-      </div>
-      <div class="item">
-        <img src="https://i.imgur.com/w0Fz8Je.jpg" alt="Crochet Flower">
-        <h3>Crochet Flower</h3>
-        <p>₱100</p>
-        <button>Add to Cart</button>
-      </div>
+<!-- Map Screen -->
+<div id="mapScreen">
+  <div id="map" style="width:100%; height:100vh;"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ===== Firebase Config =====
+const firebaseConfig = {
+  apiKey: "AIzaSyBnP8y9jomVAeBcLfYHQEHDQ13sL2Oqjg0",
+  authDomain: "green-7c336.firebaseapp.com",
+  databaseURL: "https://green-7c336-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "green-7c336",
+  storageBucket: "green-7c336.appspot.com",
+  messagingSenderId: "567004985945",
+  appId: "1:567004985945:web:57c54faf76f96787f74f48",
+  measurementId: "G-M0ZGDQT250"
+};
+
+// ===== Firebase Init =====
+const app = firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+
+// ===== Map Init =====
+const map = L.map('map',{zoomControl:true}).setView([12.8797,121.7740],6);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:''}).addTo(map);
+let markers = {};
+let activeChatBubble = null;
+
+// ===== Google Login =====
+function loginGoogle() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).then(result=>{
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('mapScreen').style.display='block';
+    setTimeout(()=>{ map.invalidateSize(); initUserLocation(); },200);
+  }).catch(err=>alert("Login failed: "+err.message));
+}
+
+// ===== Initialize User Location =====
+function initUserLocation(){
+  if(!navigator.geolocation){ updateUserMarker(12.8797,121.7740,false); return; }
+
+  navigator.permissions.query({name:'geolocation'}).then(result=>{
+    if(result.state==='granted' || result.state==='prompt'){
+      navigator.geolocation.getCurrentPosition(pos=>{
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        updateUserMarker(lat,lng,true);
+        map.setView([lat,lng],12);
+      }, err=>{
+        updateUserMarker(12.8797,121.7740,false);
+        alert("Please allow location to show your green dot.");
+      });
+
+      navigator.geolocation.watchPosition(pos=>{
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        updateUserMarker(lat,lng,true);
+      });
+    } else {
+      updateUserMarker(12.8797,121.7740,false);
+    }
+  });
+}
+
+// ===== Update user marker in Firebase =====
+function updateUserMarker(lat,lng,online){
+  const user = auth.currentUser;
+  if(!user) return;
+  const userId = user.uid;
+  db.ref('users_online/'+userId).set({lat,lng,online,name:user.displayName,timestamp:Date.now()});
+  db.ref('users_online/'+userId).onDisconnect().set({online:false,timestamp:Date.now()});
+}
+
+// ===== Display all user markers =====
+db.ref('users_online').on('value', snap=>{
+  for(let key in markers){ map.removeLayer(markers[key]); }
+  markers={};
+  snap.forEach(userSnap=>{
+    const u = userSnap.val();
+    const color = u.online?'#22c55e':'#9ca3af';
+    const icon = L.divIcon({className:'',html:`<div class="pulse" style="background:${color}"></div>`});
+    const marker = L.marker([u.lat,u.lng],{icon}).addTo(map);
+    marker.on('click',()=>openQuoteBubble(marker,u));
+    markers[userSnap.key]=marker;
+  });
+});
+
+// ===== Quote + Reply Bubble with X button =====
+function openQuoteBubble(marker,user){
+  if(!auth.currentUser){ alert("Login muna!"); return; }
+  if(activeChatBubble) activeChatBubble.remove();
+
+  const bubble = L.DomUtil.create('div','inline-chat');
+  bubble.innerHTML=`
+    <button class="close-btn" id="closeBubble">✕</button>
+    <div class="quote-section">
+      <div id="userQuote">Loading quote...</div>
+      <input type="text" class="quote-input" placeholder="Put your quote..." id="quoteInput"/>
+      <button id="saveQuoteBtn">Save</button>
     </div>
-  </div>
-
-  <div id="contact" class="section">
-    <h2>Contact Us</h2>
-    <p>📧 Email: crochetbliss@gmail.com</p>
-    <p>📱 Facebook: Crochet Bliss</p>
-    <p>📸 Instagram: @crochetbliss.ph</p>
-  </div>
-
-  <div id="login" class="section">
-    <div class="login-container">
-      <h2>Login or Sign Up</h2>
-      <input type="email" id="email" placeholder="Email"><br>
-      <input type="password" id="password" placeholder="Password"><br>
-      <button onclick="login()">Login</button>
-      <button onclick="signup()">Sign Up</button><br><br>
-      <button onclick="googleLogin()">Sign in with Google</button>
+    <div class="messages" id="bubbleMessages"></div>
+    <div class="input-container">
+      <input type="text" id="bubbleInput" placeholder="Reply to this quote"/>
+      <button id="bubbleSend">Send</button>
     </div>
-  </div>
+  `;
+  document.body.appendChild(bubble);
+  setTimeout(()=>bubble.classList.add('show'),10);
+  activeChatBubble=bubble;
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  const pos = map.latLngToContainerPoint(marker.getLatLng());
+  bubble.style.left = (pos.x + 20) + 'px';
+  bubble.style.top = (pos.y - 60) + 'px';
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyACbXIwLdzyKQA6C9d49DLEW5TiaGftCdk",
-      authDomain: "rsmile-3dac0.firebaseapp.com",
-      databaseURL: "https://rsmile-3dac0-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "rsmile-3dac0",
-      storageBucket: "rsmile-3dac0.firebasestorage.app",
-      messagingSenderId: "178317672547",
-      appId: "1:178317672547:web:127b755e82724e7c613856",
-      measurementId: "G-832CSP457X"
-    };
+  // Close button
+  const closeBtn = bubble.querySelector('#closeBubble');
+  closeBtn.onclick = ()=>{
+    bubble.remove();
+    activeChatBubble=null;
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
+  const messagesDiv = bubble.querySelector('#bubbleMessages');
+  const input = bubble.querySelector('#bubbleInput');
+  const sendBtn = bubble.querySelector('#bubbleSend');
+  const quoteInput = bubble.querySelector('#quoteInput');
+  const saveQuoteBtn = bubble.querySelector('#saveQuoteBtn');
+  const userQuoteDiv = bubble.querySelector('#userQuote');
 
-    window.showSection = function(sectionId) {
-      document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
-      document.getElementById(sectionId).classList.add('active');
-    }
+  // Load quote
+  db.ref('users_quotes/'+user.uid).once('value', snap=>{
+    if(!snap.exists()) userQuoteDiv.innerText = "No quotes yet.";
+    else snap.forEach(qSnap=>userQuoteDiv.innerText = qSnap.val().text);
+  });
 
-    window.signup = function() {
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      createUserWithEmailAndPassword(auth, email, password)
-        .then(user => alert("Account created successfully!"))
-        .catch(err => alert(err.message));
-    }
+  // Save quote
+  saveQuoteBtn.onclick = ()=>{
+    const qText = quoteInput.value.trim();
+    if(!qText) return;
+    const qId = db.ref().push().key;
+    db.ref('users_quotes/'+auth.currentUser.uid+'/'+qId).set({text:qText,timestamp:Date.now()});
+    quoteInput.value=''; alert("Quote saved!");
+  };
 
-    window.login = function() {
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      signInWithEmailAndPassword(auth, email, password)
-        .then(user => alert("Welcome back!"))
-        .catch(err => alert(err.message));
-    }
+  // Load replies
+  db.ref('quote_replies/'+user.uid).off();
+  db.ref('quote_replies/'+user.uid).on('child_added', snap=>{
+    const msg = snap.val();
+    const div = document.createElement('div');
+    div.className = msg.user===auth.currentUser.uid?'you':'them';
+    div.innerText = msg.text;
+    messagesDiv.appendChild(div);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    if(msg.user!==auth.currentUser.uid) alert("New reply to quote!");
+  });
 
-    window.googleLogin = function() {
-      signInWithPopup(auth, provider)
-        .then(result => alert(`Welcome ${result.user.displayName}`))
-        .catch(err => alert(err.message));
-    }
-  </script>
-</body>
-</html><!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Page title</title>
-</head>
-<body>
-    
+  // Send reply
+  sendBtn.onclick = ()=>{
+    const text = input.value.trim();
+    if(!text) return;
+    const rId = db.ref().push().key;
+    db.ref('quote_replies/'+user.uid+'/'+rId).set({user: auth.currentUser.uid, text:text, timestamp:Date.now()});
+    input.value='';
+  };
+}
+</script>
 </body>
 </html>
